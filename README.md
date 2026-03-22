@@ -6,6 +6,7 @@ Bu proje, Discord ve diğer engelli site/uygulamalara VPN'siz ve internet hızı
 
 ![Arayüz 1](1.png)
 ![Arayüz 2](2.png)
+![Arayüz 3](3.png)
 
 ## Özet​
 
