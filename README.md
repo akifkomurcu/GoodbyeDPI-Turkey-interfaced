@@ -12,7 +12,7 @@ Bu proje, Discord ve diğer engelli site/uygulamalara VPN'siz ve internet hızı
 
 Windows için Tauri tabanlı bir kontrol panelidir. Komut satırı (CMD) pencereleri veya arka plan hizmetleriyle uğraşmak yerine, doğrudan kullanıcı dostu bir arayüz üzerinden tıkla-çalıştır mantığıyla çalışır.
 
-## GoodbyeDPI — Derin Paket İnceleme (DPI) atlatma aracı (Türkiye versiyonu)
+## GoodbyeDPI | Derin Paket İnceleme (DPI) atlatma aracı (Türkiye versiyonu)
 
 Bu uygulama, Türkiye'de bazı internet servis sağlayıcılarının DNS değişikliğine izin vermemesi sebebiyle, bu durumu bertaraf etmek için asıl proje olan [GoodbyeDPI](https://github.com/ValdikSS/GoodbyeDPI)'ın düzenlenmiş bir versiyonudur.
 Bu yazılım, birçok ISS'da (İnternet Servis Sağlayıcısı) bulunan ve belirli web sitelerine erişimi engelleyen "Derin Paket İnceleme" (DPI) sistemlerini atlatmak için tasarlanmıştır.
