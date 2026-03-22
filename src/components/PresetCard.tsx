@@ -44,14 +44,6 @@ export function PresetCard({
         >
           {selected ? "Seçili" : "Seç"}
         </button>
-        <button
-          type="button"
-          className="primary-button primary-button--small"
-          onClick={() => onTry(preset.id)}
-          disabled={disabled}
-        >
-          {running && !active ? "Geç ve Dene" : "Hemen Dene"}
-        </button>
       </div>
     </article>
   );

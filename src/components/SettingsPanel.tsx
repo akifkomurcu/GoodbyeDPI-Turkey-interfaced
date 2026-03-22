@@ -60,20 +60,6 @@ export function SettingsPanel({ settings, disabled, onChange }: SettingsPanelPro
       <label className="toggle">
         <input
           type="checkbox"
-          checked={settings.requireAdmin}
-          disabled={disabled}
-          onChange={(event) =>
-            onChange({ ...settings, requireAdmin: event.target.checked })
-          }
-        />
-        <div>
-          <strong>Yönetici hatırlatmasını göster</strong>
-          <span>GoodbyeDPI için yönetici yetkisi gerektiğini hatırlatır.</span>
-        </div>
-      </label>
-      <label className="toggle">
-        <input
-          type="checkbox"
           checked={settings.minimizeToTray}
           disabled={disabled}
           onChange={(event) =>

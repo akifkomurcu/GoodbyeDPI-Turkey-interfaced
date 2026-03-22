@@ -118,7 +118,7 @@ fn preset_catalog() -> Vec<Preset> {
     vec![
         Preset {
             id: "turkey-dnsredir".into(),
-            label: "Varsayilan".into(),
+            label: "Varsayılan".into(),
             description: "GitHub release ZIP icindeki turkey_dnsredir.cmd ile ayni komutu calistirir.".into(),
             launch_mode: "cli-args".into(),
             args: vec![
@@ -296,6 +296,21 @@ fn stop_windows_service(service_name: &str) {
 fn unload_windivert_driver() {
     stop_windows_service("WinDivert");
     stop_windows_service("WinDivert14");
+}
+
+fn stop_external_goodbyedpi_instances() {
+    #[cfg(target_os = "windows")]
+    {
+        let _ = Command::new("taskkill")
+            .args(["/IM", "goodbyedpi.exe", "/F"])
+            .creation_flags(CREATE_NO_WINDOW)
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
+    }
+
+    unload_windivert_driver();
 }
 
 fn sync_windows_startup(_app: &AppHandle, enabled: bool) -> Result<(), String> {
@@ -543,6 +558,8 @@ fn start_goodbyedpi_internal(
         .find(|preset| preset.id == preset_id)
         .ok_or_else(|| "Secilen preset bulunamadi.".to_string())?;
 
+    stop_external_goodbyedpi_instances();
+
     let resource_dir = resolve_resource_dir(app)?;
     let binary_dir = ensure_binary_layout(&resource_dir)?;
     let executable = binary_dir.join("goodbyedpi.exe");
@@ -689,6 +706,13 @@ pub fn run() {
             if let Some(window) = app_handle.get_webview_window("main") {
                 let _ = window.set_icon(app_icon.clone());
             }
+
+            stop_external_goodbyedpi_instances();
+            emit_log(
+                &app_handle,
+                "system",
+                "Baslangicta acik kalmis GoodbyeDPI surecleri temizlendi.",
+            );
 
             let show_item = MenuItemBuilder::with_id("show", "Goster").build(app)?;
             let exit_item = MenuItemBuilder::with_id("exit", "Cikis").build(app)?;

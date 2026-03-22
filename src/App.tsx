@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { LogConsole } from "./components/LogConsole";
 import { PresetCard } from "./components/PresetCard";
 import { SettingsPanel } from "./components/SettingsPanel";
-import { StatusPill } from "./components/StatusPill";
 import {
   DEFAULT_STREAM_DESCRIPTOR,
   getStatus,
@@ -16,6 +15,8 @@ import {
   streamLogs
 } from "./lib/tauri";
 import type { AppSettings, LogEntry, Preset, RuntimeStatus } from "./types";
+
+type View = "home" | "presets" | "logs" | "settings";
 
 const initialSettings: AppSettings = {
   selectedPreset: "turkey-dnsredir",
@@ -35,6 +36,16 @@ const initialStatus: RuntimeStatus = {
   resourcePath: null
 };
 
+function getInitialTheme(): "dark" | "light" {
+  try {
+    const stored = localStorage.getItem("gdpi-theme");
+    if (stored === "dark" || stored === "light") return stored;
+  } catch {
+    // ignore
+  }
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
 export function App() {
   const [presets, setPresets] = useState<Preset[]>([]);
   const [settings, setSettings] = useState<AppSettings>(initialSettings);
@@ -42,6 +53,16 @@ export function App() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [busy, setBusy] = useState(true);
   const [actionPending, setActionPending] = useState(false);
+  const [view, setView] = useState<View>("home");
+  const [theme, setTheme] = useState<"dark" | "light">(getInitialTheme);
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    try {
+      localStorage.setItem("gdpi-theme", theme);
+    } catch {
+      // ignore
+    }
+  }, [theme]);
 
   useEffect(() => {
     let active = true;
@@ -50,16 +71,14 @@ export function App() {
 
     async function bootstrap() {
       try {
-        const [availablePresets, storedSettings, runtimeStatus, descriptor] = await Promise.all([
+        const [availablePresets, storedSettings, runtimeStatus] = await Promise.all([
           listPresets(),
           loadSettings(),
           getStatus(),
           streamLogs().catch(() => DEFAULT_STREAM_DESCRIPTOR)
         ]);
 
-        if (!active) {
-          return;
-        }
+        if (!active) return;
 
         setPresets(availablePresets);
         setSettings(storedSettings);
@@ -72,10 +91,6 @@ export function App() {
         statusUnlisten = await onStatus((nextStatus) => {
           setStatus(nextStatus);
         });
-
-        if (!descriptor.logEvent || !descriptor.statusEvent) {
-          console.warn("Log stream descriptor missing event names.");
-        }
       } catch (error) {
         setStatus({
           state: "error",
@@ -85,9 +100,7 @@ export function App() {
           resourcePath: null
         });
       } finally {
-        if (active) {
-          setBusy(false);
-        }
+        if (active) setBusy(false);
       }
     }
 
@@ -96,9 +109,7 @@ export function App() {
     const intervalId = window.setInterval(() => {
       getStatus()
         .then((nextStatus) => {
-          if (active) {
-            setStatus(nextStatus);
-          }
+          if (active) setStatus(nextStatus);
         })
         .catch(() => undefined);
     }, 2000);
@@ -106,23 +117,14 @@ export function App() {
     return () => {
       active = false;
       window.clearInterval(intervalId);
-      if (logUnlisten) {
-        logUnlisten();
-      }
-      if (statusUnlisten) {
-        statusUnlisten();
-      }
+      logUnlisten?.();
+      statusUnlisten?.();
     };
   }, []);
 
   const selectedPreset = useMemo(
-    () => presets.find((preset) => preset.id === settings.selectedPreset) ?? presets[0],
+    () => presets.find((p) => p.id === settings.selectedPreset) ?? presets[0],
     [presets, settings.selectedPreset]
-  );
-
-  const activePreset = useMemo(
-    () => presets.find((preset) => preset.id === status.activePresetId) ?? null,
-    [presets, status.activePresetId]
   );
 
   async function persistSettings(nextSettings: AppSettings) {
@@ -144,27 +146,16 @@ export function App() {
   function pushSystemLog(message: string) {
     setLogs((current) => [
       ...current,
-      {
-        timestamp: String(Date.now()),
-        stream: "system",
-        message
-      }
+      { timestamp: String(Date.now()), stream: "system", message }
     ]);
   }
 
-  async function startPreset(presetId: string) {
-    const nextStatus = await startGoodbyeDpi(presetId);
-    setStatus(nextStatus);
-  }
-
   async function handleStart(presetId = selectedPreset?.id) {
-    if (!presetId) {
-      return;
-    }
-
+    if (!presetId) return;
     setActionPending(true);
     try {
-      await startPreset(presetId);
+      const nextStatus = await startGoodbyeDpi(presetId);
+      setStatus(nextStatus);
       if (settings.selectedPreset !== presetId) {
         await persistSettings({ ...settings, selectedPreset: presetId });
       }
@@ -197,12 +188,9 @@ export function App() {
       const nextSettings = { ...settings, selectedPreset: presetId };
       setSettings(nextSettings);
       await saveSettings(nextSettings);
-
-      if (status.state === "running") {
-        await stopGoodbyeDpi();
-      }
-
-      await startPreset(presetId);
+      if (status.state === "running") await stopGoodbyeDpi();
+      const nextStatus = await startGoodbyeDpi(presetId);
+      setStatus(nextStatus);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setStatus((current) => ({ ...current, state: "error", lastError: message }));
@@ -214,108 +202,137 @@ export function App() {
 
   const canStart = !busy && !actionPending && status.state !== "running" && !!selectedPreset;
   const canStop = !busy && !actionPending && status.state === "running";
-  const statusSummary =
-    status.state === "running"
-      ? "Süreç açık."
-      : status.state === "error"
-        ? "Başlatma başarısız oldu veya süreç kapandı."
-        : "Hazır. Bir preset seçip başlatabilirsiniz.";
+
+  function toggleView(target: "presets" | "logs" | "settings") {
+    setView((v) => (v === target ? "home" : target));
+  }
 
   return (
-    <main className="shell shell--minimal">
-      <section className="topbar">
-        <div className="topbar__title">
-          <p className="eyebrow">GoodbyeDPI Turkey</p>
-          <h1>Kontrol Paneli</h1>
-          <p className="topbar__summary">{statusSummary}</p>
+    <div className="app">
+      <nav className="navbar">
+        <div className="navbar__left">
+          <button
+            type="button"
+            className="navbar__brand"
+            onClick={() => setView("home")}
+          >
+            GoodbyeDPI
+          </button>
+          <div className="navbar__divider" />
+          <button
+            type="button"
+            className={`nav-btn${view === "presets" ? " nav-btn--active" : ""}`}
+            onClick={() => toggleView("presets")}
+          >
+            Presetler
+          </button>
+          <button
+            type="button"
+            className={`nav-btn${view === "logs" ? " nav-btn--active" : ""}`}
+            onClick={() => toggleView("logs")}
+          >
+            Loglar
+          </button>
+          <button
+            type="button"
+            className={`nav-btn${view === "settings" ? " nav-btn--active" : ""}`}
+            onClick={() => toggleView("settings")}
+          >
+            Ayarlar
+          </button>
         </div>
-        <div className="topbar__meta">
-          <StatusPill state={status.state} />
-          <p>{activePreset?.label ?? selectedPreset?.label ?? "Preset seçilmedi"}</p>
+        <div className="navbar__right">
+          <button
+            type="button"
+            className="nav-btn"
+            onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+            title={theme === "dark" ? "Açık temaya geç" : "Koyu temaya geç"}
+          >
+            {theme === "dark" ? "☀" : "☾"}
+          </button>
+          <span
+            className={`online-dot online-dot--${status.state}`}
+            title={
+              status.state === "running"
+                ? "Çalışıyor"
+                : status.state === "error"
+                  ? "Hata"
+                  : "Hazır"
+            }
+          />
         </div>
-      </section>
+      </nav>
 
-      {settings.requireAdmin ? (
-        <section className="notice notice--warning">
-          Uygulamayı yönetici olarak açmanız gerekir.
-        </section>
-      ) : null}
+      {view === "home" && (
+        <main className="home">
+          {busy ? (
+            <span className="home__loading">Yükleniyor...</span>
+          ) : (
+            <>
+              <button
+                type="button"
+                className={`power-btn power-btn--${status.state}`}
+                onClick={() =>
+                  void (status.state === "running" ? handleStop() : handleStart())
+                }
+                disabled={busy || actionPending || (!canStart && !canStop)}
+              >
+                {actionPending
+                  ? "..."
+                  : status.state === "running"
+                    ? "Durdur"
+                    : "Başlat"}
+              </button>
+              <div className="home__info">
+                <span className="info-preset">
+                  {selectedPreset?.label ?? "Preset seçilmedi"}
+                </span>
+                {status.pid != null && (
+                  <span className="info-pid">PID {status.pid}</span>
+                )}
+              </div>
+              {status.lastError && (
+                <p className="home__error">{status.lastError}</p>
+              )}
+            </>
+          )}
+        </main>
+      )}
 
-      {status.lastError ? (
-        <section className="notice notice--error">{status.lastError}</section>
-      ) : null}
-
-      <section className="dashboard-grid">
-        <section className="panel status-panel">
-          <div className="panel__header">
-            <div>
-              <h2>Durum</h2>
-              <p>Anlık süreç özeti.</p>
-            </div>
-          </div>
-
-          <div className="status-metrics">
-            <div>
-              <span>Seçili</span>
-              <strong>{selectedPreset?.label ?? "-"}</strong>
-            </div>
-            <div>
-              <span>Aktif</span>
-              <strong>{activePreset?.label ?? "-"}</strong>
-            </div>
-            <div>
-              <span>PID</span>
-              <strong>{status.pid ?? "-"}</strong>
-            </div>
-          </div>
-
-          <div className="actions actions--compact">
-            <button type="button" className="primary-button" onClick={() => void handleStart()} disabled={!canStart}>
-              {actionPending ? "İşleniyor..." : "Başlat"}
-            </button>
-            <button type="button" className="secondary-button" onClick={() => void handleStop()} disabled={!canStop}>
-              Durdur
-            </button>
-          </div>
-        </section>
-
-        <SettingsPanel
-          settings={settings}
-          disabled={actionPending}
-          onChange={(nextSettings) => {
-            void persistSettings(nextSettings);
-          }}
-        />
-      </section>
-
-      <section className="panel preset-panel">
-        <div className="panel__header">
-          <div>
-            <h2>Preset'ler</h2>
-            <p>Seç veya doğrudan dene. Çalışıyorsa otomatik olarak değiştirilir.</p>
+      {view === "presets" && (
+        <div className="view">
+          <div className="preset-grid">
+            {presets.map((preset) => (
+              <PresetCard
+                key={preset.id}
+                preset={preset}
+                selected={settings.selectedPreset === preset.id}
+                running={status.state === "running"}
+                active={status.activePresetId === preset.id}
+                disabled={actionPending}
+                onSelect={(id) => void persistSettings({ ...settings, selectedPreset: id })}
+                onTry={(id) => void handleTryPreset(id)}
+              />
+            ))}
           </div>
         </div>
-        <div className="preset-grid preset-grid--minimal">
-          {presets.map((preset) => (
-            <PresetCard
-              key={preset.id}
-              preset={preset}
-              selected={settings.selectedPreset === preset.id}
-              running={status.state === "running"}
-              active={status.activePresetId === preset.id}
-              disabled={actionPending}
-              onSelect={(presetId) => {
-                void persistSettings({ ...settings, selectedPreset: presetId });
-              }}
-              onTry={(presetId) => {
-                void handleTryPreset(presetId);
-              }}
-            />
-          ))}
-        </div>
-      </section>
+      )}
 
-      <LogConsole logs={logs} onClear={() => setLogs([])} />
-    </main>
+      {view === "logs" && (
+        <div className="view">
+          <LogConsole logs={logs} onClear={() => setLogs([])} />
+        </div>
+      )}
+
+      {view === "settings" && (
+        <div className="view">
+          <SettingsPanel
+            settings={settings}
+            disabled={actionPending}
+            onChange={(nextSettings) => void persistSettings(nextSettings)}
+          />
+        </div>
+      )}
+    </div>
   );
 }
