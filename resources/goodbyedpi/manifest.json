@@ -1,0 +1,9 @@
+{
+  "upstreamCommit": "8500f689bf45777b1529b50d76f04665ddd1ffac",
+  "copiedFiles": [
+    "resources/goodbyedpi/LICENSE",
+    "resources/goodbyedpi/UPSTREAM-README.md",
+    "resources/goodbyedpi/UPSTREAM-REVERT.md"
+  ],
+  "requiredBinaryFilesPresent": false
+}
