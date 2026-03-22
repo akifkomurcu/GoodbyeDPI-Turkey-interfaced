@@ -171,7 +171,7 @@ export function App() {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setStatus((current) => ({ ...current, state: "error", lastError: message }));
-      pushSystemLog(`Baslatma hatasi: ${message}`);
+      pushSystemLog(`Başlatma hatası: ${message}`);
     } finally {
       setActionPending(false);
     }
@@ -185,7 +185,7 @@ export function App() {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setStatus((current) => ({ ...current, state: "error", lastError: message }));
-      pushSystemLog(`Durdurma hatasi: ${message}`);
+      pushSystemLog(`Durdurma hatası: ${message}`);
     } finally {
       setActionPending(false);
     }
@@ -206,7 +206,7 @@ export function App() {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setStatus((current) => ({ ...current, state: "error", lastError: message }));
-      pushSystemLog(`Preset degistirme hatasi: ${message}`);
+      pushSystemLog(`Preset değiştirme hatası: ${message}`);
     } finally {
       setActionPending(false);
     }
@@ -216,10 +216,10 @@ export function App() {
   const canStop = !busy && !actionPending && status.state === "running";
   const statusSummary =
     status.state === "running"
-      ? "Surec acik. Discord veya engelli bir site ile etkisini test edin."
+      ? "Süreç açık."
       : status.state === "error"
-        ? "Baslatma basarisiz oldu veya surec kapandi."
-        : "Hazir. Bir preset secip baslatabilirsiniz.";
+        ? "Başlatma başarısız oldu veya süreç kapandı."
+        : "Hazır. Bir preset seçip başlatabilirsiniz.";
 
   return (
     <main className="shell shell--minimal">
@@ -231,14 +231,13 @@ export function App() {
         </div>
         <div className="topbar__meta">
           <StatusPill state={status.state} />
-          <p>{activePreset?.label ?? selectedPreset?.label ?? "Preset secilmedi"}</p>
+          <p>{activePreset?.label ?? selectedPreset?.label ?? "Preset seçilmedi"}</p>
         </div>
       </section>
 
       {settings.requireAdmin ? (
         <section className="notice notice--warning">
-          Uygulamayi yonetici olarak acmaniz gerekir. GoodbyeDPI sureci gizli baslatilir ama hala
-          yonetici yetkisi ister.
+          Uygulamayı yönetici olarak açmanız gerekir.
         </section>
       ) : null}
 
@@ -251,13 +250,13 @@ export function App() {
           <div className="panel__header">
             <div>
               <h2>Durum</h2>
-              <p>Anlik surec ozeti.</p>
+              <p>Anlık süreç özeti.</p>
             </div>
           </div>
 
           <div className="status-metrics">
             <div>
-              <span>Secili</span>
+              <span>Seçili</span>
               <strong>{selectedPreset?.label ?? "-"}</strong>
             </div>
             <div>
@@ -272,18 +271,12 @@ export function App() {
 
           <div className="actions actions--compact">
             <button type="button" className="primary-button" onClick={() => void handleStart()} disabled={!canStart}>
-              {actionPending ? "Isleniyor..." : "Baslat"}
+              {actionPending ? "İşleniyor..." : "Başlat"}
             </button>
             <button type="button" className="secondary-button" onClick={() => void handleStop()} disabled={!canStop}>
               Durdur
             </button>
           </div>
-
-          <p className="status-note">
-            {status.state === "running"
-              ? "Siyah konsol penceresi gizlendi. Surec arka planda calisiyor."
-              : "Arayuz sadece surecin acik olup olmadigini bilir; internet etkisini elle test edin."}
-          </p>
         </section>
 
         <SettingsPanel
@@ -299,7 +292,7 @@ export function App() {
         <div className="panel__header">
           <div>
             <h2>Preset'ler</h2>
-            <p>Sec veya dogrudan dene. Calisiyorsa otomatik olarak degistirilir.</p>
+            <p>Seç veya doğrudan dene. Çalışıyorsa otomatik olarak değiştirilir.</p>
           </div>
         </div>
         <div className="preset-grid preset-grid--minimal">

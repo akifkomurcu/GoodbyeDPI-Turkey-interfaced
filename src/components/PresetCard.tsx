@@ -24,16 +24,16 @@ export function PresetCard({
       <div className="preset-card__top">
         <div>
           <strong>{preset.label}</strong>
-          <span>{active ? "Calisiyor" : selected ? "Secili" : "Hazir"}</span>
+          <span>{active ? "Çalışıyor" : selected ? "Seçili" : "Hazır"}</span>
         </div>
         <div className="preset-card__badges">
           {active ? <em>Aktif</em> : null}
-          {selected && !active ? <i>Secili</i> : null}
+          {selected && !active ? <i>Seçili</i> : null}
         </div>
       </div>
       <p className="preset-card__description">{preset.description}</p>
-      <code title={preset.args.join(" ") || preset.scriptRef || "Varsayilan"}>
-        {preset.args.join(" ") || preset.scriptRef || "Varsayilan"}
+      <code title={preset.args.join(" ") || preset.scriptRef || "Varsayılan"}>
+        {preset.args.join(" ") || preset.scriptRef || "Varsayılan"}
       </code>
       <div className="preset-card__actions">
         <button
@@ -42,7 +42,7 @@ export function PresetCard({
           onClick={() => onSelect(preset.id)}
           disabled={disabled}
         >
-          {selected ? "Secili" : "Sec"}
+          {selected ? "Seçili" : "Seç"}
         </button>
         <button
           type="button"
@@ -50,7 +50,7 @@ export function PresetCard({
           onClick={() => onTry(preset.id)}
           disabled={disabled}
         >
-          {running && !active ? "Gec ve Dene" : "Hemen Dene"}
+          {running && !active ? "Geç ve Dene" : "Hemen Dene"}
         </button>
       </div>
     </article>

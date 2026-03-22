@@ -11,7 +11,7 @@ export function LogConsole({ logs, onClear }: LogConsoleProps) {
       <div className="panel__header">
         <div>
           <h2>Log</h2>
-          <p>Son durum mesajlari ve GoodbyeDPI ciktilari.</p>
+          <p>Son durum mesajları ve GoodbyeDPI çıktıları.</p>
         </div>
         <button type="button" className="secondary-button" onClick={onClear}>
           Temizle
@@ -19,7 +19,7 @@ export function LogConsole({ logs, onClear }: LogConsoleProps) {
       </div>
       <div className="log-console" role="log" aria-live="polite">
         {logs.length === 0 ? (
-          <p className="log-console__empty">Henuz log yok. Baslat dugmesiyle sureci baslatabilirsiniz.</p>
+          <p className="log-console__empty">Henüz log yok. Başlat düğmesiyle süreci başlatabilirsiniz.</p>
         ) : (
           logs.map((entry, index) => (
             <div key={`${entry.timestamp}-${index}`} className={`log-line log-line--${entry.stream}`}>

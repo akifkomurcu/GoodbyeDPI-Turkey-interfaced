@@ -12,7 +12,7 @@ export function SettingsPanel({ settings, disabled, onChange }: SettingsPanelPro
       <div className="panel__header">
         <div>
           <h2>Temel Ayarlar</h2>
-          <p>Yalnizca gerekli kontroller acik tutuldu.</p>
+          <p>Yalnızca gerekli kontroller açık tutuldu.</p>
         </div>
       </div>
       <label className="toggle">
@@ -25,8 +25,8 @@ export function SettingsPanel({ settings, disabled, onChange }: SettingsPanelPro
           }
         />
         <div>
-          <strong>Windows acilisinda baslat</strong>
-          <span>Oturum acildiginda uygulamayi acip secili preseti otomatik baslatir.</span>
+          <strong>Windows açılışında başlat</strong>
+          <span>Oturum açıldığında uygulamayı açıp seçili preseti otomatik başlatır.</span>
         </div>
       </label>
       <label className="toggle">
@@ -39,8 +39,8 @@ export function SettingsPanel({ settings, disabled, onChange }: SettingsPanelPro
           }
         />
         <div>
-          <strong>Son preset'i hatirla</strong>
-          <span>Uygulama acildiginda son kullandigin preset secili gelsin.</span>
+          <strong>Son preset'i hatırla</strong>
+          <span>Uygulama açıldığında son kullandığın preset seçili gelsin.</span>
         </div>
       </label>
       <label className="toggle">
@@ -53,8 +53,8 @@ export function SettingsPanel({ settings, disabled, onChange }: SettingsPanelPro
           }
         />
         <div>
-          <strong>Baslatma basarisiz olursa tekrar dene</strong>
-          <span>Tek seferlik ek deneme yapilir.</span>
+          <strong>Başlatma başarısız olursa tekrar dene</strong>
+          <span>Tek seferlik ek deneme yapılır.</span>
         </div>
       </label>
       <label className="toggle">
@@ -67,8 +67,8 @@ export function SettingsPanel({ settings, disabled, onChange }: SettingsPanelPro
           }
         />
         <div>
-          <strong>Yonetici hatirlatmasini goster</strong>
-          <span>GoodbyeDPI icin yonetici yetkisi gerektigini hatirlatir.</span>
+          <strong>Yönetici hatırlatmasını göster</strong>
+          <span>GoodbyeDPI için yönetici yetkisi gerektiğini hatırlatır.</span>
         </div>
       </label>
       <label className="toggle">
@@ -81,7 +81,7 @@ export function SettingsPanel({ settings, disabled, onChange }: SettingsPanelPro
           }
         />
         <div>
-          <strong>Kapatinca arka planda calis</strong>
+          <strong>Kapatınca arka planda çalış</strong>
           <span>Pencere kapanmak yerine sistem tepsisine gizlenir.</span>
         </div>
       </label>

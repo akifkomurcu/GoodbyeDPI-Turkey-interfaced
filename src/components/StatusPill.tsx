@@ -1,8 +1,8 @@
 import type { RuntimeStatus } from "../types";
 
 const statusMap: Record<RuntimeStatus["state"], string> = {
-  running: "Surec Acik",
-  stopped: "Hazir",
+  running: "Süreç Açık",
+  stopped: "Hazır",
   error: "Hata"
 };
 
