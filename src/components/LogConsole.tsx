@@ -10,8 +10,8 @@ export function LogConsole({ logs, onClear }: LogConsoleProps) {
     <section className="panel log-panel">
       <div className="panel__header">
         <div>
-          <h2>Canli Log</h2>
-          <p>stdout, stderr ve uygulama sistem mesajlari tek yerde akar.</p>
+          <h2>Log</h2>
+          <p>Son durum mesajlari ve GoodbyeDPI ciktilari.</p>
         </div>
         <button type="button" className="secondary-button" onClick={onClear}>
           Temizle

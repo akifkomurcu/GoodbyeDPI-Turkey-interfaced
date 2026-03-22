@@ -12,9 +12,23 @@ export function SettingsPanel({ settings, disabled, onChange }: SettingsPanelPro
       <div className="panel__header">
         <div>
           <h2>Temel Ayarlar</h2>
-          <p>Ilk surum sadece guvenli ve kolay geri alinabilir secenekleri acar.</p>
+          <p>Yalnizca gerekli kontroller acik tutuldu.</p>
         </div>
       </div>
+      <label className="toggle">
+        <input
+          type="checkbox"
+          checked={settings.runOnLaunch}
+          disabled={disabled}
+          onChange={(event) =>
+            onChange({ ...settings, runOnLaunch: event.target.checked })
+          }
+        />
+        <div>
+          <strong>Windows acilisinda baslat</strong>
+          <span>Oturum acildiginda uygulamayi acip secili preseti otomatik baslatir.</span>
+        </div>
+      </label>
       <label className="toggle">
         <input
           type="checkbox"
@@ -26,7 +40,7 @@ export function SettingsPanel({ settings, disabled, onChange }: SettingsPanelPro
         />
         <div>
           <strong>Son preset'i hatirla</strong>
-          <span>Uygulama tekrar acildiginda secili profili geri yukler.</span>
+          <span>Uygulama acildiginda son kullandigin preset secili gelsin.</span>
         </div>
       </label>
       <label className="toggle">
@@ -39,8 +53,8 @@ export function SettingsPanel({ settings, disabled, onChange }: SettingsPanelPro
           }
         />
         <div>
-          <strong>Baslatma basarisiz olursa yeniden dene</strong>
-          <span>Yalnizca ayni preset icin tek ek deneme yapilir.</span>
+          <strong>Baslatma basarisiz olursa tekrar dene</strong>
+          <span>Tek seferlik ek deneme yapilir.</span>
         </div>
       </label>
       <label className="toggle">
@@ -53,15 +67,22 @@ export function SettingsPanel({ settings, disabled, onChange }: SettingsPanelPro
           }
         />
         <div>
-          <strong>Yonetici uyarisini goster</strong>
-          <span>GoodbyeDPI yonetici izni olmadan dogru calismayabilir.</span>
+          <strong>Yonetici hatirlatmasini goster</strong>
+          <span>GoodbyeDPI icin yonetici yetkisi gerektigini hatirlatir.</span>
         </div>
       </label>
-      <label className="toggle toggle--disabled">
-        <input type="checkbox" checked={settings.runOnLaunch} disabled />
+      <label className="toggle">
+        <input
+          type="checkbox"
+          checked={settings.minimizeToTray}
+          disabled={disabled}
+          onChange={(event) =>
+            onChange({ ...settings, minimizeToTray: event.target.checked })
+          }
+        />
         <div>
-          <strong>Windows ile otomatik baslat</strong>
-          <span>Bu ozellik MVP sonrasi surume birakildi.</span>
+          <strong>Kapatinca arka planda calis</strong>
+          <span>Pencere kapanmak yerine sistem tepsisine gizlenir.</span>
         </div>
       </label>
     </section>

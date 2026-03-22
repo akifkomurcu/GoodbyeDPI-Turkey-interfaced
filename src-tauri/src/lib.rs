@@ -4,11 +4,21 @@ use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
+use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::path::BaseDirectory;
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{AppHandle, Emitter, Manager, State};
+use tauri::WindowEvent;
+
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
 
 const LOG_EVENT: &str = "goodbyedpi://log";
 const STATUS_EVENT: &str = "goodbyedpi://status";
+const STARTUP_TASK_NAME: &str = "GoodbyeDPITurkeyInterface";
+
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -30,17 +40,19 @@ struct AppSettings {
     language: String,
     auto_retry: bool,
     require_admin: bool,
+    minimize_to_tray: bool,
 }
 
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
-            selected_preset: "turkiye-guvenli".into(),
+            selected_preset: "turkey-dnsredir".into(),
             run_on_launch: false,
             remember_last_preset: true,
             language: "tr".into(),
             auto_retry: false,
             require_admin: true,
+            minimize_to_tray: true,
         }
     }
 }
@@ -105,42 +117,110 @@ impl AppRuntime {
 fn preset_catalog() -> Vec<Preset> {
     vec![
         Preset {
-            id: "turkiye-guvenli".into(),
-            label: "Turkiye Guvenli".into(),
-            description: "Varsayilan ve en uyumlu profil. Cogu baglantida once bununla baslayin.".into(),
+            id: "turkey-dnsredir".into(),
+            label: "Varsayilan".into(),
+            description: "GitHub release ZIP icindeki turkey_dnsredir.cmd ile ayni komutu calistirir.".into(),
             launch_mode: "cli-args".into(),
-            args: vec!["-1".into()],
-            script_ref: None,
+            args: vec![
+                "-5".into(),
+                "--set-ttl".into(),
+                "5".into(),
+                "--dns-addr".into(),
+                "77.88.8.8".into(),
+                "--dns-port".into(),
+                "1253".into(),
+                "--dnsv6-addr".into(),
+                "2a02:6b8::feed:0ff".into(),
+                "--dnsv6-port".into(),
+                "1253".into(),
+            ],
+            script_ref: Some("turkey_dnsredir.cmd".into()),
         },
         Preset {
-            id: "turkiye-dengeli".into(),
-            label: "Turkiye Dengeli".into(),
-            description: "HTTPS agirlikli kullanim icin daha hizli ama hala guvenli secenek.".into(),
+            id: "alt-superonline-1".into(),
+            label: "Alternatif 1".into(),
+            description: "ZIP icindeki turkey_dnsredir_alternative_superonline.cmd ile ayni komutu calistirir.".into(),
             launch_mode: "cli-args".into(),
-            args: vec!["-2".into()],
-            script_ref: None,
+            args: vec![
+                "--set-ttl".into(),
+                "3".into(),
+            ],
+            script_ref: Some("turkey_dnsredir_alternative_superonline.cmd".into()),
         },
         Preset {
-            id: "turkiye-hizli".into(),
-            label: "Turkiye Hizli".into(),
-            description: "En iyi performansi hedefler; bazi aglarda daha az uyumlu olabilir.".into(),
+            id: "alt-superonline-2".into(),
+            label: "Alternatif 2".into(),
+            description: "ZIP icindeki turkey_dnsredir_alternative2_superonline.cmd ile ayni komutu calistirir.".into(),
             launch_mode: "cli-args".into(),
-            args: vec!["-4".into()],
-            script_ref: None,
+            args: vec![
+                "-5".into(),
+            ],
+            script_ref: Some("turkey_dnsredir_alternative2_superonline.cmd".into()),
         },
         Preset {
-            id: "turkiye-dnsredir".into(),
-            label: "DNS Redirection".into(),
-            description: "Yandex DNS ile DNS yonlendirmesini de etkinlestirir. DNS kaynakli engellerde deneyin.".into(),
+            id: "alt-superonline-3".into(),
+            label: "Alternatif 3".into(),
+            description: "ZIP icindeki turkey_dnsredir_alternative3_superonline.cmd ile ayni komutu calistirir.".into(),
+            launch_mode: "cli-args".into(),
+            args: vec![
+                "--set-ttl".into(),
+                "3".into(),
+                "--dns-addr".into(),
+                "77.88.8.8".into(),
+                "--dns-port".into(),
+                "1253".into(),
+                "--dnsv6-addr".into(),
+                "2a02:6b8::feed:0ff".into(),
+                "--dnsv6-port".into(),
+                "1253".into(),
+            ],
+            script_ref: Some("turkey_dnsredir_alternative3_superonline.cmd".into()),
+        },
+        Preset {
+            id: "alt-superonline-4".into(),
+            label: "Alternatif 4".into(),
+            description: "ZIP icindeki turkey_dnsredir_alternative4_superonline.cmd ile ayni komutu calistirir.".into(),
+            launch_mode: "cli-args".into(),
+            args: vec![
+                "-5".into(),
+                "--dns-addr".into(),
+                "77.88.8.8".into(),
+                "--dns-port".into(),
+                "1253".into(),
+                "--dnsv6-addr".into(),
+                "2a02:6b8::feed:0ff".into(),
+                "--dnsv6-port".into(),
+                "1253".into(),
+            ],
+            script_ref: Some("turkey_dnsredir_alternative4_superonline.cmd".into()),
+        },
+        Preset {
+            id: "alt-superonline-5".into(),
+            label: "Alternatif 5".into(),
+            description: "ZIP icindeki turkey_dnsredir_alternative5_superonline.cmd ile ayni komutu calistirir.".into(),
             launch_mode: "cli-args".into(),
             args: vec![
                 "-9".into(),
                 "--dns-addr".into(),
                 "77.88.8.8".into(),
                 "--dns-port".into(),
-                "53".into(),
+                "1253".into(),
+                "--dnsv6-addr".into(),
+                "2a02:6b8::feed:0ff".into(),
+                "--dnsv6-port".into(),
+                "1253".into(),
             ],
-            script_ref: None,
+            script_ref: Some("turkey_dnsredir_alternative5_superonline.cmd".into()),
+        },
+        Preset {
+            id: "alt-superonline-6".into(),
+            label: "Alternatif 6".into(),
+            description: "ZIP icindeki turkey_dnsredir_alternative6_superonline.cmd ile ayni komutu calistirir.".into(),
+            launch_mode: "cli-args".into(),
+            args: vec![
+                "-9".into(),
+            ],
+            script_ref: Some("turkey_dnsredir_alternative6_superonline.cmd".into()),
         },
     ]
 }
@@ -190,6 +270,99 @@ fn save_settings_to_disk(app: &AppHandle, settings: &AppSettings) -> Result<(), 
     let payload = serde_json::to_string_pretty(settings)
         .map_err(|error| format!("Ayarlar serilestirilemedi: {error}"))?;
     fs::write(path, payload).map_err(|error| format!("Ayar dosyasi yazilamadi: {error}"))
+}
+
+fn show_main_window(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+    }
+}
+
+fn stop_windows_service(service_name: &str) {
+    #[cfg(target_os = "windows")]
+    {
+        let _ = Command::new("sc")
+            .args(["stop", service_name])
+            .creation_flags(CREATE_NO_WINDOW)
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
+    }
+}
+
+fn unload_windivert_driver() {
+    stop_windows_service("WinDivert");
+    stop_windows_service("WinDivert14");
+}
+
+fn sync_windows_startup(_app: &AppHandle, enabled: bool) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        let executable = std::env::current_exe()
+            .map_err(|error| format!("Uygulama yolu alinamadi: {error}"))?;
+        let executable = executable.display().to_string();
+
+        if enabled {
+            let task_command = format!("\"{executable}\"");
+            let status = Command::new("schtasks")
+                .args([
+                    "/Create",
+                    "/TN",
+                    STARTUP_TASK_NAME,
+                    "/SC",
+                    "ONLOGON",
+                    "/RL",
+                    "HIGHEST",
+                    "/F",
+                    "/TR",
+                    &task_command,
+                ])
+                .creation_flags(CREATE_NO_WINDOW)
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status()
+                .map_err(|error| format!("Windows acilis gorevi olusturulamadi: {error}"))?;
+
+            if !status.success() {
+                return Err("Windows acilis gorevi olusturulamadi.".into());
+            }
+        } else {
+            let status = Command::new("schtasks")
+                .args(["/Delete", "/TN", STARTUP_TASK_NAME, "/F"])
+                .creation_flags(CREATE_NO_WINDOW)
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status()
+                .map_err(|error| format!("Windows acilis gorevi kaldirilamadi: {error}"))?;
+
+            if !status.success() {
+                return Err("Windows acilis gorevi kaldirilamadi.".into());
+            }
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = app;
+        let _ = enabled;
+    }
+
+    Ok(())
+}
+
+fn shutdown_goodbyedpi(runtime: &AppRuntime) {
+    let mut process_guard = runtime.process.lock().expect("runtime process lock poisoned");
+    if let Some(mut process) = process_guard.take() {
+        let _ = process.child.kill();
+        let _ = process.child.wait();
+    }
+    drop(process_guard);
+    unload_windivert_driver();
 }
 
 fn resolve_resource_dir(app: &AppHandle) -> Result<PathBuf, String> {
@@ -342,6 +515,7 @@ fn load_settings(app: AppHandle) -> Result<AppSettings, String> {
 #[tauri::command]
 fn save_settings(app: AppHandle, settings: AppSettings) -> Result<AppSettings, String> {
     save_settings_to_disk(&app, &settings)?;
+    sync_windows_startup(&app, settings.run_on_launch)?;
     Ok(settings)
 }
 
@@ -353,24 +527,23 @@ fn stream_logs() -> LogStreamDescriptor {
     }
 }
 
-#[tauri::command]
-fn start_goodbyedpi(
-    app: AppHandle,
-    runtime: State<'_, AppRuntime>,
+fn start_goodbyedpi_internal(
+    app: &AppHandle,
+    runtime: &AppRuntime,
     preset_id: String,
 ) -> Result<RuntimeStatus, String> {
-    let status = refresh_process_state(&runtime, &app);
+    let status = refresh_process_state(runtime, app);
     if status.state == "running" {
         return Err("Ayni anda yalnizca tek GoodbyeDPI sureci calisabilir.".into());
     }
 
-    let settings = load_settings_from_disk(&app).unwrap_or_default();
+    let settings = load_settings_from_disk(app).unwrap_or_default();
     let preset = preset_catalog()
         .into_iter()
         .find(|preset| preset.id == preset_id)
         .ok_or_else(|| "Secilen preset bulunamadi.".to_string())?;
 
-    let resource_dir = resolve_resource_dir(&app)?;
+    let resource_dir = resolve_resource_dir(app)?;
     let binary_dir = ensure_binary_layout(&resource_dir)?;
     let executable = binary_dir.join("goodbyedpi.exe");
 
@@ -381,6 +554,9 @@ fn start_goodbyedpi(
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
+
+    #[cfg(target_os = "windows")]
+    command.creation_flags(CREATE_NO_WINDOW);
 
     let mut child = command.spawn().map_err(|error| {
         format!(
@@ -423,45 +599,58 @@ fn start_goodbyedpi(
         },
         ..settings
     };
-    let _ = save_settings_to_disk(&app, &updated_settings);
+    let _ = save_settings_to_disk(app, &updated_settings);
 
     emit_log(
-        &app,
+        app,
         "system",
         format!("{} preset'i ile GoodbyeDPI baslatildi.", preset.label),
     );
 
-    Ok(set_status(&runtime, &app, next_status))
+    Ok(set_status(runtime, app, next_status))
+}
+
+#[tauri::command]
+fn start_goodbyedpi(
+    app: AppHandle,
+    runtime: State<'_, AppRuntime>,
+    preset_id: String,
+) -> Result<RuntimeStatus, String> {
+    start_goodbyedpi_internal(&app, &runtime, preset_id)
 }
 
 #[tauri::command]
 fn stop_goodbyedpi(app: AppHandle, runtime: State<'_, AppRuntime>) -> Result<RuntimeStatus, String> {
     let mut process_guard = runtime.process.lock().expect("runtime process lock poisoned");
-    let Some(mut process) = process_guard.take() else {
+    let Some(process) = process_guard.take() else {
         let status = RuntimeStatus::stopped(None);
         drop(process_guard);
+        unload_windivert_driver();
         return Ok(set_status(&runtime, &app, status));
     };
+    let resource_path = process.resource_path.clone();
+    let mut child = process.child;
 
-    if let Err(error) = process.child.kill() {
+    if let Err(error) = child.kill() {
         let status = RuntimeStatus {
             state: "error".into(),
             active_preset_id: None,
             pid: None,
             last_error: Some(format!("Surec durdurulamadi: {error}")),
-            resource_path: Some(process.resource_path.clone()),
+            resource_path: Some(resource_path),
         };
         drop(process_guard);
         return Ok(set_status(&runtime, &app, status));
     }
-    let _ = process.child.wait();
+    let _ = child.wait();
+    unload_windivert_driver();
     drop(process_guard);
 
     emit_log(&app, "system", "GoodbyeDPI sureci durduruldu.");
     Ok(set_status(
         &runtime,
         &app,
-        RuntimeStatus::stopped(Some(process.resource_path)),
+        RuntimeStatus::stopped(Some(resource_path)),
     ))
 }
 
@@ -477,9 +666,64 @@ pub fn run() {
             stop_goodbyedpi,
             stream_logs
         ])
+        .on_window_event(|window, event| {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                let should_minimize_to_tray = load_settings_from_disk(&window.app_handle())
+                    .map(|settings| settings.minimize_to_tray)
+                    .unwrap_or(true);
+
+                if should_minimize_to_tray {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
+        })
         .setup(|app| {
             let app_handle = app.handle().clone();
             let runtime = app.state::<AppRuntime>();
+            let app_icon = app_handle
+                .default_window_icon()
+                .cloned()
+                .expect("default window icon should be available");
+
+            if let Some(window) = app_handle.get_webview_window("main") {
+                let _ = window.set_icon(app_icon.clone());
+            }
+
+            let show_item = MenuItemBuilder::with_id("show", "Goster").build(app)?;
+            let exit_item = MenuItemBuilder::with_id("exit", "Cikis").build(app)?;
+            let tray_menu = MenuBuilder::new(app)
+                .item(&show_item)
+                .separator()
+                .item(&exit_item)
+                .build()?;
+
+            TrayIconBuilder::with_id("main-tray")
+                .icon(app_icon)
+                .tooltip("GoodbyeDPI Turkey Interface")
+                .menu(&tray_menu)
+                .show_menu_on_left_click(false)
+                .on_menu_event(|app, event| match event.id.as_ref() {
+                    "show" => show_main_window(app),
+                    "exit" => {
+                        let runtime = app.state::<AppRuntime>();
+                        shutdown_goodbyedpi(&runtime);
+                        app.exit(0);
+                    }
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray: &tauri::tray::TrayIcon<_>, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        show_main_window(tray.app_handle());
+                    }
+                })
+                .build(app)?;
+
             let initial_status = match resolve_resource_dir(&app_handle) {
                 Ok(resource_dir) => RuntimeStatus::stopped(Some(resource_dir.display().to_string())),
                 Err(error) => RuntimeStatus {
@@ -491,6 +735,23 @@ pub fn run() {
                 },
             };
             set_status(&runtime, &app_handle, initial_status);
+
+            let settings = load_settings_from_disk(&app_handle).unwrap_or_default();
+            let _ = sync_windows_startup(&app_handle, settings.run_on_launch);
+
+            if settings.run_on_launch {
+                let _ = start_goodbyedpi_internal(
+                    &app_handle,
+                    &runtime,
+                    settings.selected_preset.clone(),
+                );
+
+                if settings.minimize_to_tray {
+                    if let Some(window) = app_handle.get_webview_window("main") {
+                        let _ = window.hide();
+                    }
+                }
+            }
             Ok(())
         })
         .run(tauri::generate_context!())

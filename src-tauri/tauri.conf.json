@@ -23,9 +23,11 @@
   "bundle": {
     "active": true,
     "targets": ["nsis"],
+    "icon": ["icons/icon.ico"],
     "windows": {
       "nsis": {
-        "displayLanguageSelector": true
+        "displayLanguageSelector": true,
+        "installerIcon": "icons/icon.ico"
       }
     },
     "resources": {

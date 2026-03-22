@@ -18,12 +18,13 @@ import {
 import type { AppSettings, LogEntry, Preset, RuntimeStatus } from "./types";
 
 const initialSettings: AppSettings = {
-  selectedPreset: "turkiye-guvenli",
+  selectedPreset: "turkey-dnsredir",
   runOnLaunch: false,
   rememberLastPreset: true,
   language: "tr",
   autoRetry: false,
-  requireAdmin: true
+  requireAdmin: true,
+  minimizeToTray: true
 };
 
 const initialStatus: RuntimeStatus = {
@@ -65,7 +66,7 @@ export function App() {
         setStatus(runtimeStatus);
 
         logUnlisten = await onLog((entry) => {
-          setLogs((current) => [...current.slice(-299), entry]);
+          setLogs((current) => [...current.slice(-149), entry]);
         });
 
         statusUnlisten = await onStatus((nextStatus) => {
@@ -100,7 +101,7 @@ export function App() {
           }
         })
         .catch(() => undefined);
-    }, 2500);
+    }, 2000);
 
     return () => {
       active = false;
@@ -114,9 +115,14 @@ export function App() {
     };
   }, []);
 
-  const activePreset = useMemo(
+  const selectedPreset = useMemo(
     () => presets.find((preset) => preset.id === settings.selectedPreset) ?? presets[0],
     [presets, settings.selectedPreset]
+  );
+
+  const activePreset = useMemo(
+    () => presets.find((preset) => preset.id === status.activePresetId) ?? null,
+    [presets, status.activePresetId]
   );
 
   async function persistSettings(nextSettings: AppSettings) {
@@ -135,29 +141,37 @@ export function App() {
     }
   }
 
-  async function handleStart() {
-    if (!activePreset) {
+  function pushSystemLog(message: string) {
+    setLogs((current) => [
+      ...current,
+      {
+        timestamp: String(Date.now()),
+        stream: "system",
+        message
+      }
+    ]);
+  }
+
+  async function startPreset(presetId: string) {
+    const nextStatus = await startGoodbyeDpi(presetId);
+    setStatus(nextStatus);
+  }
+
+  async function handleStart(presetId = selectedPreset?.id) {
+    if (!presetId) {
       return;
     }
 
     setActionPending(true);
     try {
-      const nextStatus = await startGoodbyeDpi(activePreset.id);
-      setStatus(nextStatus);
-      if (settings.selectedPreset !== activePreset.id) {
-        await persistSettings({ ...settings, selectedPreset: activePreset.id });
+      await startPreset(presetId);
+      if (settings.selectedPreset !== presetId) {
+        await persistSettings({ ...settings, selectedPreset: presetId });
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setStatus((current) => ({ ...current, state: "error", lastError: message }));
-      setLogs((current) => [
-        ...current,
-        {
-          timestamp: String(Date.now()),
-          stream: "system",
-          message: `Baslatma hatasi: ${message}`
-        }
-      ]);
+      pushSystemLog(`Baslatma hatasi: ${message}`);
     } finally {
       setActionPending(false);
     }
@@ -171,48 +185,60 @@ export function App() {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setStatus((current) => ({ ...current, state: "error", lastError: message }));
+      pushSystemLog(`Durdurma hatasi: ${message}`);
     } finally {
       setActionPending(false);
     }
   }
 
-  const canStart = !busy && !actionPending && status.state !== "running" && !!activePreset;
+  async function handleTryPreset(presetId: string) {
+    setActionPending(true);
+    try {
+      const nextSettings = { ...settings, selectedPreset: presetId };
+      setSettings(nextSettings);
+      await saveSettings(nextSettings);
+
+      if (status.state === "running") {
+        await stopGoodbyeDpi();
+      }
+
+      await startPreset(presetId);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setStatus((current) => ({ ...current, state: "error", lastError: message }));
+      pushSystemLog(`Preset degistirme hatasi: ${message}`);
+    } finally {
+      setActionPending(false);
+    }
+  }
+
+  const canStart = !busy && !actionPending && status.state !== "running" && !!selectedPreset;
   const canStop = !busy && !actionPending && status.state === "running";
+  const statusSummary =
+    status.state === "running"
+      ? "Surec acik. Discord veya engelli bir site ile etkisini test edin."
+      : status.state === "error"
+        ? "Baslatma basarisiz oldu veya surec kapandi."
+        : "Hazir. Bir preset secip baslatabilirsiniz.";
 
   return (
-    <main className="shell">
-      <section className="hero">
-        <div className="hero__copy">
-          <p className="eyebrow">GoodbyeDPI Turkey Desktop MVP</p>
-          <h1>Windows icin tek ekrandan baslat, izle ve yonet.</h1>
-          <p className="hero__summary">
-            Bu arayuz, paketlenmis GoodbyeDPI kaynaklarini kullanarak secili profili
-            baslatir, loglari toplar ve tek aktif surec kuraliyla calisir.
-          </p>
+    <main className="shell shell--minimal">
+      <section className="topbar">
+        <div className="topbar__title">
+          <p className="eyebrow">GoodbyeDPI Turkey</p>
+          <h1>Kontrol Paneli</h1>
+          <p className="topbar__summary">{statusSummary}</p>
         </div>
-        <div className="hero__status">
+        <div className="topbar__meta">
           <StatusPill state={status.state} />
-          <dl>
-            <div>
-              <dt>Aktif preset</dt>
-              <dd>{activePreset?.label ?? "Yukleniyor"}</dd>
-            </div>
-            <div>
-              <dt>Surec kimligi</dt>
-              <dd>{status.pid ?? "-"}</dd>
-            </div>
-            <div>
-              <dt>Kaynak klasoru</dt>
-              <dd>{status.resourcePath ?? "Henuz bulunmadi"}</dd>
-            </div>
-          </dl>
+          <p>{activePreset?.label ?? selectedPreset?.label ?? "Preset secilmedi"}</p>
         </div>
       </section>
 
       {settings.requireAdmin ? (
         <section className="notice notice--warning">
-          GoodbyeDPI-Turkey genellikle yonetici yetkisiyle calistirilmalidir. Yonetici
-          izni yoksa baslatma hatasi alabilirsiniz.
+          Uygulamayi yonetici olarak acmaniz gerekir. GoodbyeDPI sureci gizli baslatilir ama hala
+          yonetici yetkisi ister.
         </section>
       ) : null}
 
@@ -220,37 +246,44 @@ export function App() {
         <section className="notice notice--error">{status.lastError}</section>
       ) : null}
 
-      <section className="actions">
-        <button type="button" className="primary-button" onClick={handleStart} disabled={!canStart}>
-          {actionPending ? "Isleniyor..." : "Baslat"}
-        </button>
-        <button type="button" className="secondary-button" onClick={handleStop} disabled={!canStop}>
-          Durdur
-        </button>
-      </section>
-
-      <section className="content-grid">
-        <section className="panel preset-panel">
+      <section className="dashboard-grid">
+        <section className="panel status-panel">
           <div className="panel__header">
             <div>
-              <h2>Hazir Preset'ler</h2>
-              <p>Turkiye odakli guvenli profiller arasindan secim yapin.</p>
+              <h2>Durum</h2>
+              <p>Anlik surec ozeti.</p>
             </div>
           </div>
-          <div className="preset-grid">
-            {presets.map((preset) => (
-              <PresetCard
-                key={preset.id}
-                preset={preset}
-                selected={settings.selectedPreset === preset.id}
-                disabled={actionPending}
-                onSelect={(presetId) => {
-                  const nextSettings = { ...settings, selectedPreset: presetId };
-                  void persistSettings(nextSettings);
-                }}
-              />
-            ))}
+
+          <div className="status-metrics">
+            <div>
+              <span>Secili</span>
+              <strong>{selectedPreset?.label ?? "-"}</strong>
+            </div>
+            <div>
+              <span>Aktif</span>
+              <strong>{activePreset?.label ?? "-"}</strong>
+            </div>
+            <div>
+              <span>PID</span>
+              <strong>{status.pid ?? "-"}</strong>
+            </div>
           </div>
+
+          <div className="actions actions--compact">
+            <button type="button" className="primary-button" onClick={() => void handleStart()} disabled={!canStart}>
+              {actionPending ? "Isleniyor..." : "Baslat"}
+            </button>
+            <button type="button" className="secondary-button" onClick={() => void handleStop()} disabled={!canStop}>
+              Durdur
+            </button>
+          </div>
+
+          <p className="status-note">
+            {status.state === "running"
+              ? "Siyah konsol penceresi gizlendi. Surec arka planda calisiyor."
+              : "Arayuz sadece surecin acik olup olmadigini bilir; internet etkisini elle test edin."}
+          </p>
         </section>
 
         <SettingsPanel
@@ -260,6 +293,33 @@ export function App() {
             void persistSettings(nextSettings);
           }}
         />
+      </section>
+
+      <section className="panel preset-panel">
+        <div className="panel__header">
+          <div>
+            <h2>Preset'ler</h2>
+            <p>Sec veya dogrudan dene. Calisiyorsa otomatik olarak degistirilir.</p>
+          </div>
+        </div>
+        <div className="preset-grid preset-grid--minimal">
+          {presets.map((preset) => (
+            <PresetCard
+              key={preset.id}
+              preset={preset}
+              selected={settings.selectedPreset === preset.id}
+              running={status.state === "running"}
+              active={status.activePresetId === preset.id}
+              disabled={actionPending}
+              onSelect={(presetId) => {
+                void persistSettings({ ...settings, selectedPreset: presetId });
+              }}
+              onTry={(presetId) => {
+                void handleTryPreset(presetId);
+              }}
+            />
+          ))}
+        </div>
       </section>
 
       <LogConsole logs={logs} onClear={() => setLogs([])} />

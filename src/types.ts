@@ -16,6 +16,7 @@ export interface AppSettings {
   language: "tr";
   autoRetry: boolean;
   requireAdmin: boolean;
+  minimizeToTray: boolean;
 }
 
 export interface RuntimeStatus {

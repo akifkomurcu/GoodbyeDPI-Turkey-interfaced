@@ -8,7 +8,7 @@ Gerekli Windows dosyalari:
 - `bin/WinDivert.dll`
 - `bin/WinDivert64.sys`
 
-Kaynak kodu bu repoda `upstream/GoodbyeDPI-Turkey` altinda tutulur. Release binary'leri upstream kaynak reposunda bulunmadigi icin Windows release dosyalarini bu klasore ayri olarak yerlestirmeniz gerekir.
+Upstream kaynak repo bu projede zorunlu olarak tutulmaz. Release binary'leri upstream kaynak reposunda bulunmadigi icin Windows release dosyalarini bu klasore ayri olarak yerlestirmeniz gerekir. Bakim sirasinda isterseniz `upstream/GoodbyeDPI-Turkey` altina yerel bir clone alip `npm run sync:upstream` ile dokumanlari yenileyebilirsiniz.
 
 Yardimci dokumanlar:
 
