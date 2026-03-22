@@ -27,9 +27,11 @@ Program ve içerisindeki `WinDivert.dll` / `WinDivert64.sys` dosyaları açık k
 GoodbyeDPI Türkiye Arayüz versiyonunu kullanmak çok basittir:
 
 1. GitHub `Releases` sayfasından en güncel Windows kurulum dosyasını (`GoodbyeDPI.Turkey.Interface_<surum>_x64-setup.exe`) indirin.
-2. Kurulumu tamamladıktan sonra uygulamayı çalıştırın (Yönetici izni isteyecektir, onaylayın).
-3. Arayüzden uygun **Preset** seçiminizi yapın (Örn: `turkey-dnsredir` veya `alternative2-superonline`).
-4. **Başlat** butonuna tıklayarak DPI atlatma sürecini başlatın.
+2. Kurulum sırasında **"Windows kişisel bilgisayarınızı korudu"** (SmartScreen) engeliyle karşılaşırsanız (ve "Yine de çalıştır" butonu çıkmıyorsa):
+   -Başlat menüsünden **Windows Güvenliği**'ni açın -> **Uygulama ve tarayıcı denetimi** -> **İtibar tabanlı koruma ayarları** menüsüne girerek **Uygulamaları ve dosyaları denetle** (SmartScreen) seçeneğini kurulum bitene kadar kapalı konuma getirin.
+3. Kurulumu tamamladıktan sonra uygulamayı çalıştırın (Yönetici izni isteyecektir, onaylayın).
+4. Arayüzden uygun **Preset** seçiminizi yapın (Örn: `turkey-dnsredir` veya `alternative2-superonline`).
+5. **Başlat** butonuna tıklayarak DPI atlatma sürecini başlatın.
 
 ### Özellikler
 - Preset odaklı başlat/durdur akışı (CMD gerektirmez)
