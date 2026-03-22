@@ -2,6 +2,11 @@
 
 Bu proje, Discord ve diğer engelli site/uygulamalara VPN'siz ve internet hızında yavaşlama olmadan girmek için [cagritaskn/GoodbyeDPI-Turkey](https://github.com/cagritaskn/GoodbyeDPI-Turkey) projesinin **kullanıcı dostu masaüstü arayüzü (GUI)** versiyonudur.
 
+## Ekran Görüntüleri
+
+![Arayüz 1](1.png)
+![Arayüz 2](2.png)
+
 ## Özet​
 
 Windows için Tauri tabanlı bir kontrol panelidir. Komut satırı (CMD) pencereleri veya arka plan hizmetleriyle uğraşmak yerine, doğrudan kullanıcı dostu bir arayüz üzerinden tıkla-çalıştır mantığıyla çalışır.
