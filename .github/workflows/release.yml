@@ -38,10 +38,13 @@ jobs:
         with:
           files: |
             src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/bundle/msi/*.msi
 
       - name: Upload installer as workflow artifact
         if: github.event_name != 'release'
         uses: actions/upload-artifact@v4
         with:
           name: goodbyedpi-turkey-interface-windows
-          path: src-tauri/target/release/bundle/nsis/*.exe
+          path: |
+            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/bundle/msi/*.msi

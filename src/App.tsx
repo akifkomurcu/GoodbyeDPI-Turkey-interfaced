@@ -3,7 +3,6 @@ import { LogConsole } from "./components/LogConsole";
 import { PresetCard } from "./components/PresetCard";
 import { SettingsPanel } from "./components/SettingsPanel";
 import {
-  DEFAULT_STREAM_DESCRIPTOR,
   getStatus,
   listPresets,
   loadSettings,
@@ -11,8 +10,7 @@ import {
   onStatus,
   saveSettings,
   startGoodbyeDpi,
-  stopGoodbyeDpi,
-  streamLogs
+  stopGoodbyeDpi
 } from "./lib/tauri";
 import type { AppSettings, LogEntry, Preset, RuntimeStatus } from "./types";
 
@@ -74,8 +72,7 @@ export function App() {
         const [availablePresets, storedSettings, runtimeStatus] = await Promise.all([
           listPresets(),
           loadSettings(),
-          getStatus(),
-          streamLogs().catch(() => DEFAULT_STREAM_DESCRIPTOR)
+          getStatus()
         ]);
 
         if (!active) return;
@@ -106,17 +103,8 @@ export function App() {
 
     bootstrap();
 
-    const intervalId = window.setInterval(() => {
-      getStatus()
-        .then((nextStatus) => {
-          if (active) setStatus(nextStatus);
-        })
-        .catch(() => undefined);
-    }, 2000);
-
     return () => {
       active = false;
-      window.clearInterval(intervalId);
       logUnlisten?.();
       statusUnlisten?.();
     };
@@ -177,24 +165,6 @@ export function App() {
       const message = error instanceof Error ? error.message : String(error);
       setStatus((current) => ({ ...current, state: "error", lastError: message }));
       pushSystemLog(`Durdurma hatası: ${message}`);
-    } finally {
-      setActionPending(false);
-    }
-  }
-
-  async function handleTryPreset(presetId: string) {
-    setActionPending(true);
-    try {
-      const nextSettings = { ...settings, selectedPreset: presetId };
-      setSettings(nextSettings);
-      await saveSettings(nextSettings);
-      if (status.state === "running") await stopGoodbyeDpi();
-      const nextStatus = await startGoodbyeDpi(presetId);
-      setStatus(nextStatus);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      setStatus((current) => ({ ...current, state: "error", lastError: message }));
-      pushSystemLog(`Preset değiştirme hatası: ${message}`);
     } finally {
       setActionPending(false);
     }
@@ -307,11 +277,9 @@ export function App() {
                 key={preset.id}
                 preset={preset}
                 selected={settings.selectedPreset === preset.id}
-                running={status.state === "running"}
                 active={status.activePresetId === preset.id}
                 disabled={actionPending}
                 onSelect={(id) => void persistSettings({ ...settings, selectedPreset: id })}
-                onTry={(id) => void handleTryPreset(id)}
               />
             ))}
           </div>

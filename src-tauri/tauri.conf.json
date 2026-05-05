@@ -22,7 +22,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
+    "targets": ["nsis", "msi"],
     "icon": ["icons/icon.ico"],
     "windows": {
       "nsis": {
@@ -35,4 +35,3 @@
     }
   }
 }
-

@@ -2,7 +2,7 @@
 name = "goodbyedpi-interface"
 version = "1.0.2"
 description = "GoodbyeDPI Turkey desktop control panel"
-authors = ["Codex"]
+authors = ["akifkomurcu"]
 license = "MIT"
 repository = "https://github.com/ValdikSS/GoodbyeDPI"
 homepage = "https://github.com/ValdikSS/GoodbyeDPI"

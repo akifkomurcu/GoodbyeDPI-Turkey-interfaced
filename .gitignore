@@ -5,3 +5,5 @@ target
 *.log
 src-tauri/gen
 
+# Otomatik oluşturulan, makineye özgü yollar içerir
+resources/goodbyedpi/manifest.json

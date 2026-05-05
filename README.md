@@ -21,22 +21,51 @@ Optik ayırıcı veya port yansıtma (Pasif DPI) kullanarak bağlanan ve herhang
 > [!NOTE]
 > Windows 7, 8, 8.1, 10 veya 11 işletim sistemlerinde uygulamayı **yönetici olarak çalıştırmanız** mecburidir. Gerekli yetkiyi uygulama içerisinden veya kısayol üzerinden verebilirsiniz.
 
-## Virüs & Veri Sızıntısı & Bitcoin Mining
+## Virüs & Antivirüs Uyarıları
 
-Program ve içerisindeki `WinDivert.dll` / `WinDivert64.sys` dosyaları açık kaynak kodludur. Bazı antivirüs (ör. Kaspersky) programları bu dosyaların paket inceleme/işleme fonksiyonlarından dolayı yanlış pozitif (false positive) uyarı verebilir. İstemeyen ve güvenmeyen kullanıcılar kullanmak zorunda değildir, herkesin kendi seçimidir.
+Program ve içerisindeki `WinDivert.dll` / `WinDivert64.sys` dosyaları açık kaynak kodludur. Bazı antivirüs programları bu dosyaların paket inceleme/işleme özelliğinden dolayı **yanlış pozitif (false positive)** uyarı verebilir. Bu durum GoodbyeDPI'ın tüm sürümleri için yaygın ve beklenen bir davranıştır.
 
 > [!IMPORTANT]
 > WinDivert dosyalarının açıklamalarında bulunan Bitcoin adresi sizi korkutmasın. WinDivert, [basil00](https://github.com/basil00) isminde bir geliştiricinin ücretsiz kütüphanesidir. Adres, geliştiricinin bağış cüzdanıdır. Virüs veya mining işlemi yoktur.
 
+### Neden Bu Uyarı Çıkıyor?
+
+| Bileşen | Neden Uyarı Çıkıyor |
+|---------|---------------------|
+| `goodbyedpi.exe` + `WinDivert64.sys` | Kernel düzeyinde ağ trafiğini yakalar — bazı kötü amaçlı yazılımlar da aynı sürücüyü kullanır |
+| NSIS `.exe` installer | İmzasız kurulum dosyası → SmartScreen'de sıfır itibar |
+| Tauri binary (Rust) | Yeni, imzasız binary → makine öğrenmesi tabanlı heuristik |
+
+### Kurulum Sırasında SmartScreen Engeli
+
+Kurulumda **"Windows kişisel bilgisayarınızı korudu"** ekranı çıkıyorsa ve "Yine de çalıştır" butonu görünmüyorsa:
+
+1. **Windows Güvenliği** → **Uygulama ve tarayıcı denetimi** → **İtibar tabanlı koruma ayarları** açın.
+2. **Uygulamaları ve dosyaları denetle** (SmartScreen) seçeneğini kurulum bitene kadar kapatın.
+3. Kurulumu tamamlayıp ardından SmartScreen'i tekrar açın.
+
+### Windows Defender "Trojan" Tespiti
+
+Defender kurulumdan sonra dosyaları karantinaya alıyorsa:
+
+1. **Windows Güvenliği** → **Virüs ve tehdit koruması** → **Koruma geçmişi** açın.
+2. Karantinaya alınan dosyayı bulun → **Geri Yükle** / **İzin Ver** seçin.
+3. Aynı pencerede **Dışlama ekle** → kurulum klasörünü ekleyin  
+   (varsayılan: `C:\Program Files\GoodbyeDPI Turkey Interface`)
+
+> [!NOTE]
+> Dosyaların yanlış tespit edildiğini Microsoft'a bildirmek isterseniz:  
+> 👉 [Microsoft Security Intelligence — Dosya Gönder](https://www.microsoft.com/en-us/wdsi/filesubmission)  
+> Microsoft dosyayı güvenli olarak onaylarsa bir sonraki Defender güncellemesinde tespit kaldırılır.
+
 ## Uygulamayı Kullanmak
 
-GoodbyeDPI Türkiye Arayüz versiyonunu kullanmak çok basittir:
-
-1. GitHub `Releases` sayfasından en güncel Windows kurulum dosyasını (`GoodbyeDPI.Turkey.Interface_<surum>_x64-setup.exe`) indirin.
-2. Kurulum sırasında **"Windows kişisel bilgisayarınızı korudu"** (SmartScreen) engeliyle karşılaşırsanız (ve "Yine de çalıştır" butonu çıkmıyorsa):
-   -Başlat menüsünden **Windows Güvenliği**'ni açın -> **Uygulama ve tarayıcı denetimi** -> **İtibar tabanlı koruma ayarları** menüsüne girerek **Uygulamaları ve dosyaları denetle** (SmartScreen) seçeneğini kurulum bitene kadar kapalı konuma getirin.
+1. GitHub `Releases` sayfasından en güncel Windows kurulum dosyasını indirin:
+   - **NSIS:** `GoodbyeDPI.Turkey.Interface_<surum>_x64-setup.exe`
+   - **MSI:** `GoodbyeDPI.Turkey.Interface_<surum>_x64_en-US.msi` (Defender uyarısı daha az)
+2. Kurulum sırasında SmartScreen engeli çıkarsa yukarıdaki [SmartScreen adımlarını](#kurulum-sırasında-smartscreen-engeli) izleyin.
 3. Kurulumu tamamladıktan sonra uygulamayı çalıştırın (Yönetici izni isteyecektir, onaylayın).
-4. Arayüzden uygun **Preset** seçiminizi yapın (Örn: `turkey-dnsredir` veya `alternative2-superonline`).
+4. Arayüzden uygun **Preset** seçiminizi yapın (Örn: `turkey-dnsredir`).
 5. **Başlat** butonuna tıklayarak DPI atlatma sürecini başlatın.
 
 ### Özellikler
@@ -48,8 +77,9 @@ GoodbyeDPI Türkiye Arayüz versiyonunu kullanmak çok basittir:
 ## Sık Karşılaşılan Sorunlar
 
 - **Uygulama arka planda kapanmıyor / Dosya silinmiyor**: Uygulama kapanırken "Kapatınca arka planda çalış" ayarı aktifse sistem tepsisine gizlenir. Tamamen kapatmak için sistem tepsisindeki (sağ alt köşe) simgeye sağ tıklayıp "Çıkış" diyebilir veya arayüzden "Durdur" butonuna basarak DPI sürecini sonlandırabilirsiniz.
-- **Discord açılmıyor ancak web çalışıyor**: Superonline ve Fiber kullanıcıları için bu durum yaşanabilir. Arayüzden `alternative2-superonline`, `alternative4-superonline` gibi diğer alternatif presetleri seçip "Hemen Dene" butonunu kullanarak test edebilirsiniz.
-- **WinDivert bulunamadı veya Antivirüs siliyor**: Kurulum klasörünü (veya `.exe` dosyasını) antivirüs programınızda istisnalara (dışlamalara) ekleyin.
+- **Discord açılmıyor ancak web çalışıyor**: Superonline ve Fiber kullanıcıları için bu durum yaşanabilir. Arayüzden `alternative2-superonline`, `alternative4-superonline` gibi diğer alternatif presetleri seçip test edebilirsiniz.
+- **WinDivert bulunamadı veya Antivirüs siliyor**: Kurulum klasörünü antivirüs programınızda istisnalara (dışlamalara) ekleyin.
+
 
 ## Geliştirme Notları (Geliştiriciler İçin)
 
@@ -71,7 +101,7 @@ npm run tauri dev
 ```
 
 ### Release Hazırlama
-GitHub release varlıklarını otomatik yüklemek için `.github/workflows/release.yml` adında bir workflow hazırdır. Bu workflow Windows üzerinde projeyi build eder, NSIS kurulum `.exe` dosyasını üretir ve GitHub Release'e otomatik yükler.
+GitHub release varlıklarını otomatik yüklemek için `.github/workflows/release.yml` adında bir workflow hazırdır. Bu workflow Windows üzerinde projeyi build eder, NSIS `.exe` ve MSI `.msi` kurulum dosyalarını üretir ve GitHub Release'e otomatik yükler.
 
 ## Bağış ve Destek
 

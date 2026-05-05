@@ -3,21 +3,17 @@ import type { Preset } from "../types";
 interface PresetCardProps {
   preset: Preset;
   selected: boolean;
-  running: boolean;
   active: boolean;
   disabled?: boolean;
   onSelect: (id: string) => void;
-  onTry: (id: string) => void;
 }
 
 export function PresetCard({
   preset,
   selected,
-  running,
   active,
   disabled,
-  onSelect,
-  onTry
+  onSelect
 }: PresetCardProps) {
   return (
     <article className={`preset-card ${selected ? "preset-card--selected" : ""}`}>
@@ -48,4 +44,3 @@ export function PresetCard({
     </article>
   );
 }
-

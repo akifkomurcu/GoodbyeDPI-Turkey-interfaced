@@ -494,6 +494,92 @@ fn refresh_process_state(runtime: &AppRuntime, app: &AppHandle) -> RuntimeStatus
     current_status(runtime)
 }
 
+/// Bir arka plan thread'i başlatarak child process'in beklenmedik kapanışını izler.
+/// Process kapanırsa durum güncellenir ve STATUS_EVENT emit edilir.
+fn spawn_process_watcher(app: AppHandle, watched_preset_id: String) {
+    std::thread::spawn(move || {
+        loop {
+            std::thread::sleep(std::time::Duration::from_millis(500));
+
+            let runtime = app.state::<AppRuntime>();
+            let mut process_guard = match runtime.process.lock() {
+                Ok(g) => g,
+                Err(_) => break,
+            };
+
+            let Some(process) = process_guard.as_mut() else {
+                // Process, stop_goodbyedpi tarafından normal şekilde durduruldu.
+                break;
+            };
+
+            // Farklı bir preset başlatılmışsa eski watcher durur.
+            if process.active_preset_id != watched_preset_id {
+                break;
+            }
+
+            match process.child.try_wait() {
+                Ok(None) => {
+                    // Hâlâ çalışıyor, döngüye devam et.
+                }
+                Ok(Some(exit_status)) => {
+                    let success = exit_status.success();
+                    let resource_path = process.resource_path.clone();
+                    let exit_str = exit_status.to_string();
+                    *process_guard = None;
+                    drop(process_guard);
+                    unload_windivert_driver();
+
+                    let message = if success {
+                        "GoodbyeDPI süreci sona erdi.".to_string()
+                    } else {
+                        format!("GoodbyeDPI beklenmedik şekilde kapandı: {exit_str}")
+                    };
+                    emit_log(&app, "system", &message);
+
+                    set_status(
+                        &runtime,
+                        &app,
+                        RuntimeStatus {
+                            state: if success { "stopped".into() } else { "error".into() },
+                            active_preset_id: if success {
+                                None
+                            } else {
+                                Some(watched_preset_id.clone())
+                            },
+                            pid: None,
+                            last_error: if success {
+                                None
+                            } else {
+                                Some(format!("Süreç beklenmedik şekilde sonlandı: {exit_str}"))
+                            },
+                            resource_path: Some(resource_path),
+                        },
+                    );
+                    break;
+                }
+                Err(error) => {
+                    let resource_path = process.resource_path.clone();
+                    *process_guard = None;
+                    drop(process_guard);
+                    emit_log(&app, "system", format!("GoodbyeDPI süreç hatası: {error}"));
+                    set_status(
+                        &runtime,
+                        &app,
+                        RuntimeStatus {
+                            state: "error".into(),
+                            active_preset_id: Some(watched_preset_id.clone()),
+                            pid: None,
+                            last_error: Some(format!("Süreç durumu okunamadı: {error}")),
+                            resource_path: Some(resource_path),
+                        },
+                    );
+                    break;
+                }
+            }
+        }
+    });
+}
+
 fn spawn_log_reader<R>(reader: R, stream: &'static str, app: AppHandle)
 where
     R: std::io::Read + Send + 'static,
@@ -624,7 +710,9 @@ fn start_goodbyedpi_internal(
         format!("{} preset'i ile GoodbyeDPI baslatildi.", preset.label),
     );
 
-    Ok(set_status(runtime, app, next_status))
+    let updated_status = set_status(runtime, app, next_status);
+    spawn_process_watcher(app.clone(), preset.id.clone());
+    Ok(updated_status)
 }
 
 #[tauri::command]
@@ -646,14 +734,21 @@ fn stop_goodbyedpi(app: AppHandle, runtime: State<'_, AppRuntime>) -> Result<Run
         return Ok(set_status(&runtime, &app, status));
     };
     let resource_path = process.resource_path.clone();
+    let active_preset_id = process.active_preset_id.clone();
     let mut child = process.child;
 
     if let Err(error) = child.kill() {
+        // Kill başarısız — process handle'ı geri koy; watcher izlemeye devam edebilsin.
+        *process_guard = Some(ManagedProcess {
+            child,
+            active_preset_id,
+            resource_path: resource_path.clone(),
+        });
         let status = RuntimeStatus {
             state: "error".into(),
             active_preset_id: None,
             pid: None,
-            last_error: Some(format!("Surec durdurulamadi: {error}")),
+            last_error: Some(format!("Süreç durdurulamadı: {error}")),
             resource_path: Some(resource_path),
         };
         drop(process_guard);
@@ -663,7 +758,7 @@ fn stop_goodbyedpi(app: AppHandle, runtime: State<'_, AppRuntime>) -> Result<Run
     unload_windivert_driver();
     drop(process_guard);
 
-    emit_log(&app, "system", "GoodbyeDPI sureci durduruldu.");
+    emit_log(&app, "system", "GoodbyeDPI süreci durduruldu.");
     Ok(set_status(
         &runtime,
         &app,

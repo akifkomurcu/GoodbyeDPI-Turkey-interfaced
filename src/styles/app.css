@@ -178,68 +178,6 @@ body {
   }
 }
 
-/* ── Update banner ── */
-.update-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 9px 16px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  font-size: 0.84rem;
-  flex-shrink: 0;
-}
-
-.update-banner span {
-  color: var(--text-muted);
-}
-
-.update-banner strong {
-  color: var(--text);
-}
-
-.update-banner__actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-.update-banner__install {
-  background: var(--text);
-  color: var(--bg);
-  border: none;
-  border-radius: 6px;
-  padding: 4px 12px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  transition: opacity 120ms ease;
-}
-
-.update-banner__install:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.update-banner__install:hover:not(:disabled) {
-  opacity: 0.8;
-}
-
-.update-banner__dismiss {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  padding: 4px 6px;
-  border-radius: 4px;
-  transition: color 120ms ease, background 120ms ease;
-}
-
-.update-banner__dismiss:hover {
-  color: var(--text);
-  background: var(--surface-alt);
-}
 
 /* ── Home view ── */
 .home {

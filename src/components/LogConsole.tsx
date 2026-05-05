@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import type { LogEntry } from "../types";
 
 interface LogConsoleProps {
@@ -6,6 +7,12 @@ interface LogConsoleProps {
 }
 
 export function LogConsole({ logs, onClear }: LogConsoleProps) {
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [logs]);
+
   return (
     <section className="panel log-panel">
       <div className="panel__header">
@@ -29,6 +36,7 @@ export function LogConsole({ logs, onClear }: LogConsoleProps) {
             </div>
           ))
         )}
+        <div ref={bottomRef} />
       </div>
     </section>
   );

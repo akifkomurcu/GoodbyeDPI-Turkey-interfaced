@@ -13,7 +13,7 @@ export interface AppSettings {
   selectedPreset: string;
   runOnLaunch: boolean;
   rememberLastPreset: boolean;
-  language: "tr";
+  language: string;
   autoRetry: boolean;
   requireAdmin: boolean;
   minimizeToTray: boolean;
@@ -32,9 +32,3 @@ export interface LogEntry {
   stream: "stdout" | "stderr" | "system";
   message: string;
 }
-
-export interface LogStreamDescriptor {
-  logEvent: string;
-  statusEvent: string;
-}
-
