@@ -1,0 +1,9 @@
+discord.com
+discordapp.com
+discord.gg
+discordcdn.com
+discord.media
+discordapp.net
+discordstatus.com
+dl.discordapp.net
+gateway.discord.gg

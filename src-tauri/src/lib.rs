@@ -222,6 +222,18 @@ fn preset_catalog() -> Vec<Preset> {
             ],
             script_ref: Some("turkey_dnsredir_alternative6_superonline.cmd".into()),
         },
+        Preset {
+            id: "discord-only".into(),
+            label: "Sadece Discord".into(),
+            description: "Yalnizca Discord domainlerine DPI atlatma uygular. Diger trafigi etkilemez.".into(),
+            launch_mode: "cli-args".into(),
+            args: vec![
+                "-1".into(),
+                "--blacklist".into(),
+                "../discord-custom.txt".into(),
+            ],
+            script_ref: None,
+        },
     ]
 }
 
